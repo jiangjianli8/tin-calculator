@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>锡矿石计价计算器</title>
+<style>
+:root {
+  --bg: #1a1a1e;
+  --card: #252530;
+  --card2: #2a2a38;
+  --text: #e0e0e0;
+  --text2: #a0a0b0;
+  --tin: #8a9bb5;
+  --tin-light: #b0c4de;
+  --tin-dark: #4a5568;
+  --accent: #4ecdc4;
+  --danger: #e05555;
+  --border: #3a3a48;
+  --radius: 12px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+.container { width:100%; max-width:520px; }
+
+.header { text-align: center; padding: 24px 0 16px; }
+.header h1 {
+  font-size: 2.2rem; font-weight: 900;
+  background: linear-gradient(135deg, var(--tin-light), #c0c8d8);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.header .subtitle { font-size: 0.8rem; color: var(--text2); margin-top: 4px; }
+
+.price-card {
+  background: linear-gradient(135deg, #1e2128, #1a1d24);
+  border: 1px solid var(--tin-dark); border-radius: var(--radius);
+  padding: 16px 20px; margin-bottom: 16px; position: relative; overflow: hidden;
+}
+.price-card::before {
+  content: ''; position: absolute; top: -50%; right: -30%;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(138,155,181,0.12) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.price-label { font-size: 0.75rem; color: var(--tin-light); letter-spacing: 2px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.price-label .dot { width: 8px; height: 8px; background: #4caf50; border-radius: 50%; animation: pulse 2s infinite; }
+.price-label .dot.offline { background: var(--danger); animation: none; }
+@keyframes pulse {
+  0%,100% { opacity:1; box-shadow: 0 0 4px #4caf50; }
+  50% { opacity:0.4; box-shadow: 0 0 8px #4caf50; }
+}
+.price-value { font-size: 2.4rem; font-weight: 800; color: var(--tin-light); line-height: 1; }
+.price-value .unit { font-size: 0.9rem; font-weight: 400; color: var(--text2); margin-left: 4px; }
+.price-meta { font-size: 0.7rem; color: var(--text2); margin-top: 4px; display: flex; justify-content: space-between; align-items: center; }
+.refresh-btn { background: rgba(138,155,181,0.2); border: 1px solid var(--tin-dark); color: var(--tin-light); padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; }
+.refresh-btn:hover { background: rgba(138,155,181,0.35); }
+.manual-price { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.75rem; }
+.manual-price input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 4px 10px; border-radius: 6px; width: 120px; font-size: 0.75rem; text-align: center; }
+.manual-price button { background: var(--tin-dark); border: none; color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; }
+.toggle-manual { font-size: 0.65rem; color: var(--text2); cursor: pointer; margin-top: 4px; display: inline-block; }
+
+.mode-toggle { display: flex; gap: 2px; background: var(--card2); border-radius: 10px; padding: 4px; margin-bottom: 16px; }
+.mode-toggle button { flex: 1; background: none; border: none; color: var(--text2); padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
+.mode-toggle button.active { background: rgba(138,155,181,0.2); color: var(--tin-light); font-weight: 600; }
+
+.import-fields { display: none; margin-bottom: 4px; }
+.import-fields.show { display: block; }
+.import-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.import-row label { font-size: 0.75rem; color: var(--text2); min-width: 60px; }
+.import-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; text-align: center; }
+.import-row .unit { font-size: 0.7rem; color: var(--text2); min-width: 40px; }
+
+.calc-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.calc-card h2 { font-size: 0.9rem; font-weight: 600; color: var(--text2); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+.grade-section { margin-bottom: 16px; }
+.grade-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.grade-label .name { font-size: 0.8rem; color: var(--text2); }
+.grade-label .value { font-size: 1.8rem; font-weight: 700; color: var(--tin-light); }
+.grade-label .value .pct { font-size: 1rem; color: var(--text2); }
+input[type=range] { -webkit-appearance: none; width: 100%; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #3a4558, var(--tin), var(--tin-light)); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 36px; height: 36px; border-radius: 50%; background: var(--tin-light); border: 3px solid #fff; cursor: pointer; box-shadow: 0 2px 12px rgba(138,155,181,0.5); }
+.grade-ticks { display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text2); padding: 4px 8px 0; }
+.grade-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.grade-presets button { background: var(--card2); border: 1px solid var(--border); color: var(--text2); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; }
+.grade-presets button:hover { border-color: var(--tin); color: var(--tin-light); }
+.grade-presets button.active { background: rgba(138,155,181,0.2); border-color: var(--tin); color: var(--tin-light); }
+
+.info-row { background: var(--card2); border-radius: 10px; padding: 10px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.info-row .label { font-size: 0.75rem; color: var(--text2); }
+.info-row .value { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+
+.result-card { background: linear-gradient(135deg, #1e2128, #1a1d24); border: 2px solid var(--tin-dark); border-radius: var(--radius); padding: 20px; text-align: center; margin-bottom: 16px; }
+.result-card .label { font-size: 0.75rem; color: var(--tin-light); margin-bottom: 8px; }
+.result-card .value { font-size: 2.8rem; font-weight: 800; color: #e8ecf2; line-height: 1; }
+.result-card .unit { font-size: 0.85rem; font-weight: 400; color: var(--text2); }
+.result-card .metal-ton { font-size: 0.8rem; color: var(--tin-light); margin-top: 6px; }
+.result-formula { font-size: 0.7rem; color: var(--text2); margin-top: 8px; line-height: 1.5; }
+
+.coeff-table-wrap { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+.coeff-table-wrap.open { max-height: 600px; }
+.coeff-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 12px; }
+.coeff-table th, .coeff-table td { padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--border); }
+.coeff-table th { color: var(--text2); font-weight: 500; font-size: 0.7rem; }
+.coeff-table tr:hover td { background: rgba(138,155,181,0.08); }
+.coeff-table tr.current td { background: rgba(138,155,181,0.2); color: var(--tin-light); font-weight: 600; }
+.toggle-table-btn { width: 100%; background: none; border: 1px dashed var(--border); color: var(--text2); padding: 8px; border-radius: 8px; font-size: 0.7rem; cursor: pointer; margin-top: 8px; }
+.toggle-table-btn:hover { border-color: var(--tin); color: var(--tin-light); }
+
+.footer { text-align: center; padding: 16px; font-size: 0.65rem; color: var(--text2); }
+.price-error { color: var(--danger); font-size: 0.7rem; }
+.tc-note { font-size: 0.65rem; color: var(--text2); margin-top: 4px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>锡矿石计价计算器</h1>
+    <div class="subtitle">基于上期所沪锡期货 · 支持国内/进口双模式</div>
+  </div>
+
+  <div class="price-card">
+    <div class="price-label"><span class="dot" id="statusDot"></span> <span id="priceLabel">SMM 1#电解锡（现货）</span></div>
+    <div class="price-value" id="priceDisplay">--<span class="unit">元/吨</span></div>
+    <div class="price-meta">
+      <span id="priceTime">加载中...</span>
+      <button class="refresh-btn" onclick="fetchPrice()">🔄 刷新</button>
+    </div>
+    <div class="manual-price" id="manualPriceRow" style="display:none">
+      <span>手动输入:</span>
+      <input type="number" id="manualPriceInput" placeholder="锡价 (元/吨)">
+      <button onclick="setManualPrice()">确定</button>
+    </div>
+    <span class="toggle-manual" onclick="toggleManual()">或手动输入价格</span>
+  </div>
+
+  <div class="mode-toggle">
+    <button class="active" onclick="switchMode('domestic')">🇨🇳 国内计价</button>
+    <button onclick="switchMode('import')">🌍 进口计价</button>
+  </div>
+
+  <div class="import-fields" id="importFields">
+    <div class="import-row">
+      <label>LME锡价</label>
+      <input type="number" id="lmePrice" value="53500" step="100" oninput="updateCalc()">
+      <span class="unit">美元/吨</span>
+    </div>
+    <div class="import-row">
+      <label>汇率</label>
+      <input type="number" id="fxRate" value="7.25" step="0.01" oninput="updateCalc()">
+      <span class="unit">USD/CNY</span>
+    </div>
+    <div class="import-row">
+      <label>进口杂费</label>
+      <input type="number" id="importFee" value="500" step="10" oninput="updateCalc()">
+      <span class="unit">元/吨</span>
+    </div>
+  </div>
+
+  <div class="calc-card">
+    <h2><span class="icon">📐</span> 矿石计价计算</h2>
+    <div class="grade-section">
+      <div class="grade-label">
+        <span class="name">锡矿石品位 (Sn%)</span>
+        <span class="value" id="gradeValue">40<span class="pct">%</span></span>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="gradeSlider" min="10" max="65" value="40" step="0.1" oninput="updateCalc()">
+      </div>
+      <div class="grade-ticks"><span>10%</span><span>20%</span><span>30%</span><span>40%</span><span>50%</span><span>60%</span><span>65%</span></div>
+      <div class="grade-presets" id="gradePresets"></div>
+    </div>
+    <div class="info-row">
+      <span class="label">🔧 加工费 (TC)</span>
+      <span class="value" id="tcValue">17,500 元/金属吨</span>
+    </div>
+    <div class="info-row">
+      <span class="label">📊 锡计价系数</span>
+      <span class="value" id="coeffValue">92.00%</span>
+    </div>
+  </div>
+
+  <div class="result-card">
+    <div class="label">💰 锡矿石单价</div>
+    <div class="value" id="orePrice">--<span class="unit">元/吨</span></div>
+    <div class="metal-ton" id="metalTonPrice"></div>
+    <div class="result-formula" id="formulaDisplay"></div>
+  </div>
+
+  <button class="toggle-table-btn" onclick="toggleTable()">📋 查看锡品位-系数对应表</button>
+  <div class="coeff-table-wrap" id="coeffTableWrap">
+    <table class="coeff-table" id="coeffTable"></table>
+    <div class="tc-note">⚠️ 系数含加工费、回收率等综合因素，仅供参考。实际成交以合同约定为准。<br>加工费基准：40%品位=17,500元/金属吨，60%品位=13,500元/金属吨（SMM 2026-07）</div>
+  </div>
+
+  <div class="footer">
+    <span style="font-weight:900;color:#2196F3;font-size:1.5rem">矿链通1.0</span>
+    <span style="font-weight:900;color:#2196F3;font-size:1.2rem">-佛山鑫善源</span>
+  </div>
+</div>
+
+<script>
+// 加工费参考表（元/金属吨）—— SMM 2026-07 基准
+// 40%品位 = 17,500元/金属吨（云南）
+// 60%品位 = 13,500元/金属吨（广西/江西/湖南）
+// 10-20%低品位区间：TC加速上升（单位金属吨处理成本更高）
+function getTC(grade) {
+  if (grade >= 60) return 13500;
+  if (grade >= 55) return 13700;
+  if (grade >= 50) return 14000;
+  if (grade >= 45) return 15000;
+  if (grade >= 40) return 17500;
+  // 20-40%: (22,000 → 17,500)
+  if (grade >= 20) return Math.round(22000 + (17500 - 22000) * (grade - 20) / 20);
+  // 10-20%: (27,000 → 22,000) 低品位TC加速
+  if (grade >= 10) return Math.round(27000 + (22000 - 27000) * (grade - 10) / 10);
+  return 27000;
+}
+
+var basePrice = 412550, manualOverride = false, currentMode = 'domestic';
+
+// 锡计价系数 = (锡价 - 加工费) / 锡价 —— 行业标准净回值法
+function getCoefficient(grade) {
+  var price = getEffectivePrice();
+  var tc = getTC(grade);
+  return ((price - tc) / price) * 100;
+}
+
+function getEffectivePrice() {
+  if (currentMode === 'import') {
+    var lme = parseFloat(document.getElementById('lmePrice').value) || 53500;
+    var fx = parseFloat(document.getElementById('fxRate').value) || 7.25;
+    var fee = parseFloat(document.getElementById('importFee').value) || 500;
+    return lme * fx + fee;
+  }
+  return basePrice;
+}
+
+function updateCalc() {
+  var grade = parseFloat(document.getElementById('gradeSlider').value);
+  var price = getEffectivePrice();
+  var tc = getTC(grade);
+  var metalTonPrice = price - tc;              // 净回值：元/金属吨
+  var orePrice = metalTonPrice * (grade / 100); // 矿石单价：元/吨矿
+  var coeff = (metalTonPrice / price) * 100;   // 计价系数
+
+  document.getElementById('gradeValue').innerHTML = grade.toFixed(1) + '<span class="pct">%</span>';
+  document.getElementById('coeffValue').textContent = coeff.toFixed(2) + '%';
+  document.getElementById('tcValue').textContent = tc.toLocaleString() + ' 元/金属吨';
+  document.getElementById('orePrice').innerHTML = Math.round(orePrice).toLocaleString() + '<span class="unit">元/吨</span>';
+  document.getElementById('metalTonPrice').textContent =
+    '净回值 ≈ ' + Math.round(metalTonPrice).toLocaleString() + ' 元/金属吨（' + price.toLocaleString() + ' - ' + tc.toLocaleString() + ' = ' + Math.round(metalTonPrice).toLocaleString() + '）';
+
+  var modeLabel = currentMode === 'import' ? 'LME×汇率+杂费' : '沪锡结算价';
+  document.getElementById('formulaDisplay').textContent =
+    '(' + price.toLocaleString() + ' - ' + tc.toLocaleString() + ') × ' + grade.toFixed(1) +
+    '% = ' + Math.round(orePrice).toLocaleString() + ' 元/吨  [' + modeLabel + ']';
+
+  updatePresetButtons(grade);
+  highlightTableRow(grade);
+}
+
+function highlightTableRow(grade) {
+  document.querySelectorAll('#coeffTable tr').forEach(function(r) { r.classList.remove('current'); });
+  document.querySelectorAll('#coeffTable tr').forEach(function(r) {
+    var cells = r.querySelectorAll('td');
+    if (cells.length > 0 && parseInt(cells[0].textContent) === Math.round(grade)) r.classList.add('current');
+  });
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  var btns = document.querySelectorAll('.mode-toggle button');
+  btns[0].classList.toggle('active', mode === 'domestic');
+  btns[1].classList.toggle('active', mode === 'import');
+  document.getElementById('importFields').classList.toggle('show', mode === 'import');
+  document.getElementById('priceLabel').textContent = mode === 'import' ? 'LME锡 (3M) → 沪锡等价' : 'SMM 1#电解锡（现货）';
+  updateCalc();
+}
+
+function fetchPrice() {
+  var d = document.getElementById('priceDisplay'), t = document.getElementById('priceTime'), dot = document.getElementById('statusDot');
+  d.innerHTML = '<span style="font-size:1rem">⏳</span>';
+  if (dot) dot.className = 'dot';
+  fetch('data/price.json?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!manualOverride && data.price > 0) basePrice = data.price;
+      d.innerHTML = basePrice.toLocaleString() + '<span class="unit">元/吨</span>';
+      t.textContent = '更新于 ' + (data.updated_at || data.date || '');
+      if (dot) dot.className = 'dot';
+      if (!manualOverride) updateCalc();
+    })
+    .catch(function() {
+      d.innerHTML = basePrice.toLocaleString() + '<span class="unit">元/吨</span>';
+      t.innerHTML = '<span class="price-error">离线 · 默认参考价</span>';
+      if (dot) dot.className = 'dot offline';
+      updateCalc();
+    });
+}
+
+function setManualPrice() {
+  var val = parseFloat(document.getElementById('manualPriceInput').value);
+  if (val > 0) {
+    basePrice = val; manualOverride = true;
+    document.getElementById('priceDisplay').innerHTML = val.toLocaleString() + '<span class="unit">元/吨</span>';
+    document.getElementById('priceTime').textContent = '手动输入价格';
+    document.getElementById('statusDot').className = 'dot offline';
+    updateCalc();
+  }
+}
+
+function toggleManual() {
+  var row = document.getElementById('manualPriceRow');
+  row.style.display = 'flex';
+  event.target.style.display = 'none';
+}
+
+function buildPresetButtons() {
+  var container = document.getElementById('gradePresets');
+  [10, 20, 30, 40, 50, 60, 65].forEach(function(g) {
+    var btn = document.createElement('button');
+    btn.textContent = g + '%';
+    btn.onclick = function() { document.getElementById('gradeSlider').value = g; updateCalc(); };
+    container.appendChild(btn);
+  });
+}
+
+function updatePresetButtons(grade) {
+  document.querySelectorAll('#gradePresets button').forEach(function(btn) {
+    btn.classList.toggle('active', Math.abs(parseInt(btn.textContent) - grade) < 0.05);
+  });
+}
+
+function buildCoeffTable() {
+  var table = document.getElementById('coeffTable');
+  var grades = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65];
+  var html = '<tr><th>Sn%</th><th>加工费(元/金属吨)</th><th>净回值系数</th><th>Sn%</th><th>加工费(元/金属吨)</th><th>净回值系数</th></tr>';
+  var half = Math.ceil(grades.length / 2);
+  for (var i = 0; i < half; i++) {
+    var gLeft = grades[i], gRight = grades[i + half];
+    var tcLeft = getTC(gLeft), tcRight = gRight ? getTC(gRight) : 0;
+    var coeffLeft = getCoefficient(gLeft), coeffRight = gRight ? getCoefficient(gRight) : 0;
+    html += '<tr><td>' + gLeft + '%</td><td>' + tcLeft.toLocaleString() + '</td><td>' + coeffLeft.toFixed(2) + '%</td>';
+    if (gRight) html += '<td>' + gRight + '%</td><td>' + tcRight.toLocaleString() + '</td><td>' + coeffRight.toFixed(2) + '%</td>';
+    else html += '<td></td><td></td><td></td>';
+    html += '</tr>';
+  }
+  table.innerHTML = html;
+}
+
+function toggleTable() { document.getElementById('coeffTableWrap').classList.toggle('open'); }
+
+function init() { buildPresetButtons(); buildCoeffTable(); updateCalc(); fetchPrice(); setInterval(fetchPrice, 60000); }
+init();
+</script>
+</body>
+</html>
