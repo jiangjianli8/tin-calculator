@@ -1,20 +1,20 @@
 {
   "symbol": "SMM 1#电解锡（现货参考·SHFE结算价）",
-  "price": 347430,
+  "price": 349050,
   "unit": "元/吨",
-  "date": "2026-11-16",
-  "updated_at": "2026-11-17 16:41:53",
+  "date": "2026-11-17",
+  "updated_at": "2026-11-18 05:27:19",
   "source": "akshare_sina_futures",
   "detail": {
-    "open": 354000.0,
-    "high": 355400.0,
-    "low": 341340.0,
-    "close": 343230.0,
-    "settle": 347430.0,
-    "volume": 223799,
-    "hold": 35468
+    "open": 345300.0,
+    "high": 351740.0,
+    "low": 345100.0,
+    "close": 349020.0,
+    "settle": 349050.0,
+    "volume": 199587,
+    "hold": 29950
   },
-  "change": -2500,
-  "change_rate": -0.71,
-  "trend": "down"
+  "change": 1620,
+  "change_rate": 0.47,
+  "trend": "up"
 }
