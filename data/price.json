@@ -1,9 +1,9 @@
 {
-  "symbol": "SMM 1#电解锡（现货参考·SHFE结算价）",
+  "symbol": "沪锡结算价 (SN0)",
   "price": 318980,
   "unit": "元/吨",
   "date": "2026-11-19",
-  "updated_at": "2026-11-20 05:05:32",
+  "updated_at": "2026-11-20 15:55:01",
   "source": "akshare_sina_futures",
   "detail": {
     "open": 316120.0,
