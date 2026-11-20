@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   update:
@@ -32,3 +33,24 @@ jobs:
           else
             echo "No changes to commit"
           fi
+
+      - name: 失败告警（自动开 Issue）
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `⚠️ 行情更新失败 ${new Date().toISOString().slice(0,10)}`;
+            const body = [
+              `工作流 **${context.workflow}** 运行失败。`,
+              ``,
+              `- 运行记录：${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              `- 触发时间：${new Date().toISOString()}`,
+              ``,
+              `**排查提示**：优先检查 akshare 接口是否改名（历史案例：futures_zh_realtime → futures_zh_realtime_sina，2026-11-13 起静默失败 6 天）。`
+            ].join(String.fromCharCode(10));
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body
+            });
