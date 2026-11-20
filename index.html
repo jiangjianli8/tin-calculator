@@ -759,7 +759,7 @@ input[type=range]::-webkit-slider-thumb:hover {
   </div>
 
   <div class="price-card">
-    <div class="price-label"><span class="dot" id="statusDot"></span> <span id="priceLabel">SMM 1#电解锡（现货）</span></div>
+    <div class="price-label"><span class="dot" id="statusDot"></span> <span id="priceLabel">沪锡结算价 (SN0)</span></div>
     <div class="price-value" id="priceDisplay">--<span class="unit">元/吨</span></div>
     <div class="price-meta">
       <span id="priceTime">加载中...</span>
@@ -867,9 +867,13 @@ function getCoefficient(grade) {
 
 function getEffectivePrice() {
   if (currentMode === 'import') {
-    var lme = parseFloat(document.getElementById('lmePrice').value) || 53500;
-    var fx = parseFloat(document.getElementById('fxRate').value) || 7.25;
-    var fee = parseFloat(document.getElementById('importFee').value) || 500;
+    // 修复：|| 会把合法的 0 吃掉（0 杂费是合法输入）
+    var _lme = parseFloat(document.getElementById('lmePrice').value);
+    var lme = isNaN(_lme) ? 53500 : _lme;
+    var _fx = parseFloat(document.getElementById('fxRate').value);
+    var fx = isNaN(_fx) ? 7.25 : _fx;
+    var _fee = parseFloat(document.getElementById('importFee').value);
+    var fee = isNaN(_fee) ? 500 : _fee;
     return lme * fx + fee;
   }
   return basePrice;
@@ -913,7 +917,7 @@ function switchMode(mode) {
   btns[0].classList.toggle('active', mode === 'domestic');
   btns[1].classList.toggle('active', mode === 'import');
   document.getElementById('importFields').classList.toggle('show', mode === 'import');
-  document.getElementById('priceLabel').textContent = mode === 'import' ? 'LME锡 (3M) → 沪锡等价' : 'SMM 1#电解锡（现货）';
+  document.getElementById('priceLabel').textContent = mode === 'import' ? 'LME锡 (3M) → 沪锡等价' : '沪锡结算价 (SN0)';
   updateCalc();
 }
 

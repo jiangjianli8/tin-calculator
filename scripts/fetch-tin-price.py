@@ -11,12 +11,15 @@ now = datetime.now(CST)
 
 
 def fetch_smm_spot():
-    """Try to fetch SMM 1# tin spot price via AKShare futures_spot.
-       Returns price_dict or None on failure.
+    """试取 SMM 1# 锡现货（历史上未成功，见下方说明）。
+
+    ⚠️ 已知问题（2026-11-20 核实）：`ak.futures_spot_price()` 的真实签名是
+    `futures_spot_price(date=None, vars_list=None)`，并没有 symbol / market 参数。
+    这里传 symbol="锡" 会抛 TypeError，被 except 吞掉 → 永远走 SHFE 分支。
+    保留此函数是为了将来换成合法的 SMM 数据源；当前实际数据来自沪锡 SN0 结算价。
     """
     try:
         import akshare as ak
-        # AKShare's spot price from SMM; symbol may vary by version
         df = ak.futures_spot_price(symbol="锡", market="smm")
         if df is not None and not df.empty:
             # Returns DataFrame with spot price data
@@ -37,8 +40,9 @@ def fetch_smm_spot():
                         "updated_at": now.strftime("%Y-%m-%d %H:%M:%S"),
                         "source": "akshare_smm_spot",
                     }
-    except Exception:
-        pass  # Fall through to futures
+    except Exception as e:
+        # 不再静默：把失败原因打出来，避免"以为在用 SMM 现货"的误解
+        print(f"INFO: SMM 现货接口不可用（{type(e).__name__}: {str(e)[:80]}），改用沪锡结算价")
     return None
 
 
@@ -65,7 +69,7 @@ def fetch_shfe_futures():
     price = settle_price if settle_price > 0 else close_price
 
     result = {
-        "symbol": "SMM 1#电解锡（现货参考·SHFE结算价）",
+        "symbol": "沪锡结算价 (SN0)",
         "price": round(price),
         "unit": "元/吨",
         "date": str(latest.get("date", "")),
