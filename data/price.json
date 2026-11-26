@@ -1,20 +1,20 @@
 {
   "symbol": "沪锡结算价 (SN0)",
-  "price": 302680,
+  "price": 286940,
   "unit": "元/吨",
-  "date": "2026-11-25",
-  "updated_at": "2026-11-26 06:03:56",
+  "date": "2026-11-26",
+  "updated_at": "2026-11-26 17:03:20",
   "source": "akshare_sina_futures",
   "detail": {
-    "open": 312810.0,
-    "high": 314240.0,
-    "low": 288380.0,
-    "close": 288990.0,
-    "settle": 302680.0,
-    "volume": 305753,
-    "hold": 44921
+    "open": 288280.0,
+    "high": 297420.0,
+    "low": 277410.0,
+    "close": 290600.0,
+    "settle": 286940.0,
+    "volume": 394677,
+    "hold": 42274
   },
-  "change": -16380,
-  "change_rate": -5.13,
+  "change": -15740,
+  "change_rate": -5.2,
   "trend": "down"
 }
